@@ -1,5 +1,5 @@
 import { Player, CustomTrack, Queue } from '@discordx/music'
-import { Client, Discord, Guild, SelectMenuComponent, Slash, SlashGroup } from 'discordx'
+import { Client, Discord, Guild, SelectMenuComponent, Slash, SlashGroup, SlashOption } from 'discordx'
 import type {
   CommandInteraction,
   Guild as DGuild,
@@ -7,9 +7,10 @@ import type {
   StringSelectMenuInteraction,
   VoiceChannel
 } from 'discord.js'
-
+import moment from 'moment'
 import {
   ActionRowBuilder,
+  ApplicationCommandOptionType,
   EmbedBuilder,
   StringSelectMenuBuilder
 } from 'discord.js'
@@ -22,8 +23,11 @@ import sql from '../../Database'
   description: "Music commands"
 })
 @SlashGroup("music")
-class MusicCommands {
+export class MusicCommands {
   player;
+  get playerBot() {
+    return this.player;
+  }
   constructor() {
     this.player = new Player();
   }
@@ -33,15 +37,19 @@ class MusicCommands {
   })
   async play(interaction: CommandInteraction) {
     const radios = await sql`
-      SELECT * FROM radios ORDER BY name ASC;
+      SELECT * FROM radios ORDER BY created_at DESC, name ASC;
       `
     const selectRadios = radios.map((r, i) => {
-      if(r.description) return {
-        label: r.name,
+      var newBadge: boolean = false;
+      const created = new Date(r?.created_at)
+      const now = new Date()
+      if (moment(created).isSame(now, 'month') && moment(created).isSame(now, 'year')) newBadge = true;
+      if (r.description) return {
+        label: `${r?.verified ? "[✅] " : ""}${newBadge ? "[NEW] " : ""}${r.name}`,
         description: r.description,
         value: r.id
       }; else return {
-        label: r.name,
+        label: `${r?.verified ? "[✅] " : ""}${newBadge ? "[NEW] " : ""}${r.name}`,
         value: r.id
       }
     })
@@ -68,7 +76,7 @@ class MusicCommands {
     const me = i.guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-    
+
     await i?.deferReply({
       ephemeral: true
     })
@@ -80,13 +88,15 @@ class MusicCommands {
     if (!_radio) return i?.followUp({
       content: "Something went wrong..."
     });
-    if (!voice) return i?.followUp({
-      content: "[🔊] Join on a Voice Channel"
-    });;
+    if (!voice) return i?.editReply({
+      content: "[❌] Join on a Voice Channel"
+    });
     const queue = player.queue(guild);
-    if(queue.isPlaying) await queue.skip();
-    if(!voiceme) await queue.join(voice);
-    
+    if (queue.isPlaying) await queue.skip();
+    if (!voiceme) await queue.join(voice);
+    if (queue.isPlaying && voice !== voiceme) return i?.editReply({
+      content: "[❌] You are not on the same voice channel as me."
+    });
     const status = await queue.playTrack(new CustomTrack(
       player,
       _radio.id,
@@ -115,12 +125,60 @@ class MusicCommands {
     const me = i.guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-    
+
     const queue = player.queue(guild);
-    if(!queue.isPlaying) return i?.editReply({
+    if (!voice) return i?.editReply({
+      content: "[❌] Join on a Voice Channel"
+    });
+    if (!queue.isPlaying) return i?.editReply({
       content: "[❌] Nothing playing"
+    });
+    if (voice.id !== voiceme.id) return i?.editReply({
+      content: "[❌] You are not on the same voice channel as me."
     });
     queue.leave();
     i?.deleteReply();
+  }
+  @Slash({
+    name: "volume",
+    description: "Sets volume to Music"
+  })
+  async volume(
+    @SlashOption({
+      name: "number",
+      description: "Volume from 0 to 100",
+      type: ApplicationCommandOptionType.Number,
+      required: false
+    })
+    vol: number,
+    i: CommandInteraction) {
+    await i?.deferReply({
+      ephemeral: true
+    })
+    const player = this.player;
+    const member = i?.member as GuildMember;
+    const guild = i?.guild as DGuild;
+    const me = guild?.members.me as GuildMember;
+    const voice = member?.voice.channel as VoiceChannel;
+    const voiceme = me?.voice.channel as VoiceChannel;
+
+    const queue = player.queue(guild);
+    if (!voice) return i?.editReply({
+      content: "[❌] Join on a Voice Channel"
+    });
+    if (!queue.isPlaying) return i?.editReply({
+      content: "[❌] Nothing playing"
+    });
+    if (voice.id !== voiceme.id) return i?.editReply({
+      content: "[❌] You are not on the same voice channel as me."
+    });
+    if (!vol) return i?.editReply({
+      content: `[🔊] **${queue?.volume}**%`,
+    })
+
+    queue?.setVolume(vol);
+    i?.editReply({
+      content: `[🔊] Volume changed to **${vol}**%`
+    })
   }
 }
