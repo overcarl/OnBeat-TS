@@ -26,6 +26,16 @@ import { Api } from '../../main'
 @SlashGroup("music")
 export class MusicCommands {
   public player;
+  private async _v() {
+    const v = await sql`
+       SELECT * FROM version
+      `
+    if (!v[0]) return;
+    /*const _embed = new EmbedBuilder(v[0].embed)
+      .setColor(0x26f89a)*/
+
+    return v[0].embed;
+  }
   public constructor() {
     this.player = new Player();
   }
@@ -62,6 +72,7 @@ export class MusicCommands {
 
     interaction?.reply({
       content: "Select a radio",
+      embeds: [await this._v()],
       components: [row],
       ephemeral: true
     })
@@ -160,9 +171,9 @@ export class MusicCommands {
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
     const voted = await Api.hasVoted(member.id)
-    if(!voted) return i?.editReply({
+    if (!voted) return i?.editReply({
       content: `<:topgg:1061675035326165034> | This command is exclusive to those who voted for OnBeat on Top.gg!\n<https://top.gg/bot/916373041460703282>`
-    }); 
+    });
     const queue = player.queue(guild);
     if (!voice) return i?.editReply({
       content: "[❌] Join on a Voice Channel"

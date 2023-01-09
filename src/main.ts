@@ -50,15 +50,6 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
       const data = await sql`
        INSERT INTO users (id) VALUES (${interaction?.user.id})
       `
-      const v = await sql`
-       SELECT * FROM version
-      `
-      if(!v[0]) return;
-      const _embed = new EmbedBuilder(v[0].embed)
-        .setColor(0x26f89a)
-      interaction.channel?.send({
-        embeds: [_embed]
-      })
     }
 
     // if(user[0].banned) return;
