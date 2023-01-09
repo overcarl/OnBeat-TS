@@ -33,6 +33,7 @@
     "node-fetch": "^3.3.0",
     "opusscript": "^0.0.8",
     "postgres": "^3.3.2",
+    "topgg-autoposter": "^2.0.1",
     "uuidv4": "^6.2.13"
   },
   "devDependencies": {

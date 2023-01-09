@@ -15,12 +15,13 @@ export class API {
       "error": "Guild not found",
       "code": 404
     };
-    const player = new MusicCommands().playerBot;
+    const player = new MusicCommands().player;
     const queue = player.queue(guild);
     console.log(queue.currentTrack)
     ctx.body = {
       "guildName": guild?.name,
-      "isPlaying": queue?.isPlaying
+      "isPlaying": queue?.isPlaying,
+      "current": queue.currentTrack
     };
   }
 }

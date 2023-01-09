@@ -1,6 +1,6 @@
 import { dirname, importx } from "@discordx/importer";
 import type { CommandInteraction, Interaction, Message } from "discord.js";
-import { EmbedBuilder, IntentsBitField, Partials } from "discord.js";
+import { ActivityType, EmbedBuilder, IntentsBitField, Partials } from "discord.js";
 import * as dotenv from 'dotenv'
 dotenv.config();
 import { Client } from "discordx";
@@ -22,19 +22,23 @@ export const bot = new Client({
   simpleCommand: { prefix: "." }
 });
 
+import { AutoPoster } from 'topgg-autoposter';
+import  topgg from '@top-gg/sdk'
+const token = process.env.topgg as string
+const post = AutoPoster(token, bot);
+export const Api = new topgg.Api(token)
+
 bot.on("ready", async () => {
   // await bot.clearApplicationCommands();
-  async function status() {
-    const statuses = await sql`
-     SELECT * FROM status
-    `
-    const random = statuses[Math.floor(Math.random() * statuses.length)]
-    // console.log(random)
-    bot.user?.setActivity(random)
-  }
-  status()
-  setInterval(status, 60000)
+
+  // console.log(random)
+  bot.user?.setActivity("OnBeat 1st Birthday!", { type: ActivityType.Listening })
   await bot.initApplicationCommands();
+  // console.log(token)
+})
+
+post.on("posted", () => {
+  console.log("WHOOOO posted to topgg")
 })
 
 bot.on("interactionCreate", async (interaction: Interaction) => {
@@ -49,6 +53,7 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
       const v = await sql`
        SELECT * FROM version
       `
+      if(!v[0]) return;
       const _embed = new EmbedBuilder(v[0].embed)
         .setColor(0x26f89a)
       interaction.channel?.send({

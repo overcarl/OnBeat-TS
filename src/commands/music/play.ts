@@ -16,6 +16,7 @@ import {
 } from 'discord.js'
 
 import sql from '../../Database'
+import { Api } from '../../main'
 
 @Discord()
 @SlashGroup({
@@ -24,11 +25,8 @@ import sql from '../../Database'
 })
 @SlashGroup("music")
 export class MusicCommands {
-  player;
-  get playerBot() {
-    return this.player;
-  }
-  constructor() {
+  public player;
+  public constructor() {
     this.player = new Player();
   }
   @Slash({
@@ -161,7 +159,10 @@ export class MusicCommands {
     const me = guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-
+    const voted = await Api.hasVoted(member.id)
+    if(!voted) return i?.editReply({
+      content: `<:topgg:1061675035326165034> | This command is exclusive to those who voted for OnBeat on Top.gg!\n<https://top.gg/bot/916373041460703282>`
+    }); 
     const queue = player.queue(guild);
     if (!voice) return i?.editReply({
       content: "[❌] Join on a Voice Channel"
@@ -180,5 +181,8 @@ export class MusicCommands {
     i?.editReply({
       content: `[🔊] Volume changed to **${vol}**%`
     })
+  }
+  public get playerBot() {
+    return this.player;
   }
 }
