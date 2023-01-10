@@ -1,10 +1,30 @@
-import { Player, CustomTrack, Queue } from '@discordx/music'
-import { Client, Discord, Guild, SelectMenuComponent, Slash, SlashGroup, SlashOption } from 'discordx'
+import {
+  Player,
+  CustomTrack,
+  Queue
+} from '@discordx/music'
+import {
+  Router,
+  Get
+} from '@discordx/koa'
+import type {
+  Context
+} from "koa";
+import {
+  Client,
+  Discord,
+  Guild,
+  SelectMenuComponent,
+  Slash,
+  SlashGroup,
+  SlashOption
+} from 'discordx'
 import type {
   CommandInteraction,
   Guild as DGuild,
   GuildMember,
   StringSelectMenuInteraction,
+  AutocompleteInteraction,
   VoiceChannel
 } from 'discord.js'
 import moment from 'moment'
@@ -14,10 +34,10 @@ import {
   EmbedBuilder,
   StringSelectMenuBuilder
 } from 'discord.js'
-
+import {
+  bot
+} from '../../main'
 import sql from '../../Database'
-import { Api } from '../../main'
-
 @Discord()
 @SlashGroup({
   name: "music",
@@ -25,78 +45,68 @@ import { Api } from '../../main'
 })
 @SlashGroup("music")
 export class MusicCommands {
-  public player;
-  private async _v() {
-    const v = await sql`
-       SELECT * FROM version
-      `
-    if (!v[0]) return;
-    /*const _embed = new EmbedBuilder(v[0].embed)
-      .setColor(0x26f89a)*/
-
-    return v[0].embed;
-  }
-  public constructor() {
-    this.player = new Player();
-  }
+  _player = new Player();
   @Slash({
     name: "play",
     description: "Select a Radio to Play"
   })
-  async play(interaction: CommandInteraction) {
-    const radios = await sql`
-      SELECT * FROM radios ORDER BY created_at DESC, name ASC;
+  async play(@SlashOption({
+    autocomplete: async function(interaction: AutocompleteInteraction) {
+      const radios = await sql`
+      SELECT * FROM radios ORDER BY created_at DESC, verified ASC;
       `
-    const selectRadios = radios.map((r, i) => {
-      var newBadge: boolean = false;
-      const created = moment(r.created_at).format()
-      const next = moment(created).add(2, 'days').format()
-      if (moment().isSameOrBefore(next)) newBadge = true;
-      
-      if (r.description) return {
-        label: `${r?.verified ? "[✅] " : ""}${newBadge ? "[NEW] " : ""}${r.name}`,
-        description: r.description,
-        value: r.id
-      }; else return {
-        label: `${r?.verified ? "[✅] " : ""}${newBadge ? "[NEW] " : ""}${r.name}`,
-        value: r.id
+      // var selectRadios;
+      const focusedValue = interaction.options.getFocused();
+      if (focusedValue) {
+        const selectRadios = radios.filter((r) => r?.name.includes(focusedValue)).map((r, i) => {
+          var newBadge: boolean = false;
+          const created = moment(r.created_at).format()
+          const next = moment(created).add(2, 'days').format()
+          if (moment().isSameOrBefore(next)) newBadge = true;
+          return {
+            name: `${newBadge ? "[NEW] " : ""}${r?.name}`,
+            value: r?.id
+          }
+        })
+        interaction.respond(selectRadios)
+      } else {
+        const radios_ = await sql`
+      SELECT * FROM radios WHERE verified = true;
+      `
+        const selectRadios = radios.map((r, i) => {
+          var newBadge: boolean = false;
+          const created = moment(r.created_at).format()
+          const next = moment(created).add(2, 'days').format()
+          if (moment().isSameOrBefore(next)) newBadge = true;
+          return {
+            name: `${newBadge ? "[NEW] " : ""}${r?.name}`,
+            value: r?.id
+          }
+        })
+        interaction.respond(selectRadios)
       }
-    })
-    console.log(selectRadios)
-    const radio = new StringSelectMenuBuilder()
-      .setCustomId("radios")
-      .setPlaceholder("Select a radio")
-      .setOptions(selectRadios);
-
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-      .addComponents(radio)
-
-    interaction?.reply({
-      content: "Select a radio",
-      embeds: [await this._v()],
-      components: [row],
-      ephemeral: true
-    })
-  }
-  @SelectMenuComponent({ id: "radios" })
-  async select(i: StringSelectMenuInteraction) {
+    },
+    description: "Select radio stations",
+    name: "radio",
+    required: true,
+    type: ApplicationCommandOptionType.String,
+  }) radio: string, i: CommandInteraction) {
     const player = this.player;
     const member = i?.member as GuildMember;
     const guild = i?.guild as DGuild;
     const me = i.guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-
     await i?.deferReply({
       ephemeral: true
     })
-    const radio = i.values?.[0];
+    // const radio = radio;
     const radios = await sql`
       SELECT * FROM radios WHERE id = ${radio}
       `;
     const _radio = radios[0];
-    if (!_radio) return i?.followUp({
-      content: "Something went wrong..."
+    if (!_radio) return i?.editReply({
+      content: `[🔍] I couldn't find a radio with the name or id ${radio}`
     });
     if (!voice) return i?.editReply({
       content: "[❌] Join on a Voice Channel"
@@ -107,11 +117,7 @@ export class MusicCommands {
     if (queue.isPlaying && voice !== voiceme) return i?.editReply({
       content: "[❌] You are not on the same voice channel as me."
     });
-    const status = await queue.playTrack(new CustomTrack(
-      player,
-      _radio.id,
-      _radio.url
-    ));
+    const status = await queue.playTrack(new CustomTrack(player, _radio.id, _radio.url));
     if (!status) {
       i?.followUp("Something went wrong...");
     } else {
@@ -135,7 +141,6 @@ export class MusicCommands {
     const me = i.guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-
     const queue = player.queue(guild);
     if (!voice) return i?.editReply({
       content: "[❌] Join on a Voice Channel"
@@ -150,18 +155,45 @@ export class MusicCommands {
     i?.deleteReply();
   }
   @Slash({
+    name: "playing",
+    description: "See what radio is playing"
+  })
+  async playing(i: CommandInteraction) {
+    const player = this.player;
+    const member = i?.member as GuildMember;
+    const guild = i?.guild as DGuild;
+    const me = guild?.members.me as GuildMember;
+    const voice = member?.voice.channel as VoiceChannel;
+    const voiceme = me?.voice.channel as VoiceChannel;
+    const queue = player.queue(guild);
+    if (!queue.isPlaying) return i?.reply({
+      content: "[❌] Nothing playing",
+      ephemeral: true
+    });
+    const current = queue.currentTrack;
+    const radio = await sql`
+      SELECT * FROM radios WHERE id=${current?.metadata.title as string}
+      `
+    const embed = new EmbedBuilder().setTitle("🎵 • Playing").addFields({
+      name: "📻 • Radio",
+      value: radio[0].name,
+      inline: true
+    }).setColor(0xe900FF)
+    i.reply({
+      embeds: [embed]
+    })
+    return current;
+  }
+  @Slash({
     name: "volume",
     description: "Sets volume to Music"
   })
-  async volume(
-    @SlashOption({
-      name: "number",
-      description: "Volume from 0 to 100",
-      type: ApplicationCommandOptionType.Number,
-      required: false
-    })
-    vol: number,
-    i: CommandInteraction) {
+  async volume(@SlashOption({
+    name: "number",
+    description: "Volume from 0 to 100",
+    type: ApplicationCommandOptionType.Number,
+    required: false
+  }) vol: number, i: CommandInteraction) {
     await i?.deferReply({
       ephemeral: true
     })
@@ -171,10 +203,6 @@ export class MusicCommands {
     const me = guild?.members.me as GuildMember;
     const voice = member?.voice.channel as VoiceChannel;
     const voiceme = me?.voice.channel as VoiceChannel;
-    const voted = await Api.hasVoted(member.id)
-    if (!voted) return i?.editReply({
-      content: `<:topgg:1061675035326165034> | This command is exclusive to those who voted for OnBeat on Top.gg!\n<https://top.gg/bot/916373041460703282>`
-    });
     const queue = player.queue(guild);
     if (!voice) return i?.editReply({
       content: "[❌] Join on a Voice Channel"
@@ -188,13 +216,15 @@ export class MusicCommands {
     if (!vol) return i?.editReply({
       content: `[🔊] **${queue?.volume}**%`,
     })
-
     queue?.setVolume(vol);
     i?.editReply({
       content: `[🔊] Volume changed to **${vol}**%`
     })
   }
-  public get playerBot() {
-    return this.player;
+  get player() {
+    return this._player;
+  }
+  queue(guild: DGuild) {
+    return this.player.queue(guild)
   }
 }
