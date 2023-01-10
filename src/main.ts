@@ -1,6 +1,6 @@
 import { dirname, importx } from "@discordx/importer";
 import type { CommandInteraction, Interaction, Message } from "discord.js";
-import { ActivityType, EmbedBuilder, IntentsBitField, Partials } from "discord.js";
+import { ActivityType, EmbedBuilder, IntentsBitField, Partials, type TextChannel} from "discord.js";
 import * as dotenv from 'dotenv'
 dotenv.config();
 import { Client } from "discordx";
@@ -17,7 +17,7 @@ export const bot = new Client({
     IntentsBitField.Flags.GuildMessages,
     IntentsBitField.Flags.MessageContent,
     IntentsBitField.Flags.GuildVoiceStates,
-  ],
+   ],
   silent: false,
   simpleCommand: { prefix: "." }
 });
@@ -53,6 +53,11 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
     }
 
     // if(user[0].banned) return;
+console.log(interaction)
+    const logs = bot.channels.cache.get("1062366877541748826") as TextChannel;
+      if(interaction.isCommand()) {
+        logs?.send(`${interaction.user?.tag} used ${interaction} at ${interaction.guild?.name}`)
+      }
     await bot.executeInteraction(interaction);
   } catch (e) {
     console.log(e)

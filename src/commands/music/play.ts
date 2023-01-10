@@ -49,9 +49,10 @@ export class MusicCommands {
       `
     const selectRadios = radios.map((r, i) => {
       var newBadge: boolean = false;
-      const created = new Date(r?.created_at)
-      const now = new Date()
-      if (moment(created).isSame(now, 'month') && moment(created).isSame(now, 'year')) newBadge = true;
+      const created = moment(r.created_at).format()
+      const next = moment(created).add(2, 'days').format()
+      if (moment().isSameOrBefore(next)) newBadge = true;
+      
       if (r.description) return {
         label: `${r?.verified ? "[✅] " : ""}${newBadge ? "[NEW] " : ""}${r.name}`,
         description: r.description,
