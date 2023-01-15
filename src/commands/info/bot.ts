@@ -61,6 +61,17 @@ export class BotInfo {
           "color": 39129
         }
       ]
+    }, {
+      "embeds": [
+        {
+          "author": {
+            "icon_url": "https://i.ibb.co/VLBYvP9/Novo-projeto-211-7-FF4827.png",
+            "name": "About OnBeat"
+          },
+          "title": "💁 • Support",
+          "description": `You can contact our developers on [Support Server](https://discord.gg/QTGp56HhQC) or on [Twitter](https://twitter.com/OnBeat_Me).`
+        }
+      ]
     }]
   }
   @Slash({

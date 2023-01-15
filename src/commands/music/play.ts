@@ -104,8 +104,9 @@ export class MusicCommands {
     const radios = await sql`
       SELECT * FROM radios WHERE id = ${radio}
       `;
+    
     const _radio = radios[0];
-    if (!_radio) return i?.editReply({
+    if (!radios) return i?.editReply({
       content: `[🔍] I couldn't find a radio with the name or id ${radio}`
     });
     if (!voice) return i?.editReply({
@@ -122,8 +123,11 @@ export class MusicCommands {
       i?.followUp("Something went wrong...");
     } else {
       // console.log(status)
+      const _radiodata = await sql`
+        UPDATE radios SET listened=listened+1 WHERE id=${_radio.id}
+      `
       i?.followUp({
-        content: `[🎧] Selected **${_radio.name}** to play at ${voice}`
+        content: `[🎧] Selected **${_radio.name}** to play at ${voice}\n• *If you are having problems, join our Discord server: <https://discord.gg/mEBHwnqwHv>*`
       })
     }
   }
@@ -178,6 +182,9 @@ export class MusicCommands {
       name: "📻 • Radio",
       value: radio[0].name,
       inline: true
+    }, {
+      name: "🎧 • Listened",
+      value: `${radio[0].listened??0} time${radio[0].listened>1?"s":""}`
     }).setColor(0xe900FF)
     i.reply({
       embeds: [embed]
