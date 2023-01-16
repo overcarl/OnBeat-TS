@@ -55,7 +55,6 @@ export class MusicCommands {
       const radios = await sql`
       SELECT * FROM radios ORDER BY created_at DESC, verified ASC;
       `
-      // var selectRadios;
       const focusedValue = interaction.options.getFocused();
       if (focusedValue) {
         const selectRadios = radios.filter((r) => r?.name.includes(focusedValue)).map((r, i) => {
@@ -100,7 +99,6 @@ export class MusicCommands {
     await i?.deferReply({
       ephemeral: true
     })
-    // const radio = radio;
     const radios = await sql`
       SELECT * FROM radios WHERE id = ${radio}
       `;
@@ -122,7 +120,6 @@ export class MusicCommands {
     if (!status) {
       i?.followUp("Something went wrong...");
     } else {
-      // console.log(status)
       const _radiodata = await sql`
         UPDATE radios SET listened=listened+1 WHERE id=${_radio.id}
       `
