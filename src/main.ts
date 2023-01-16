@@ -57,10 +57,6 @@ bot.on("ready", async () => {
   // console.log(token)
 })
 
-post.on("posted", () => {
-  console.log("WHOOOO posted to topgg")
-})
-
 bot.on("interactionCreate", async (interaction: Interaction) => {
   try {
     const user = await sql`
@@ -83,10 +79,6 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
     console.log(e)
   }
 });
-
-bot.on("voiceStateUpdate", (old, newvc) => {
-  
-})
        
 bot.on("messageCreate", async (message: Message) => {
   try {
