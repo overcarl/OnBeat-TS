@@ -33,18 +33,8 @@ const post = AutoPoster(token, bot);
 export const Api = new topgg.Api(token)
 
 bot.on("ready", async () => {
-  // await bot.clearApplicationCommands();
-  // console.log(random)
   function status() {
-    const array = [
-      /*{
-      name: "We apologize for any errors that occurred....",
-      type: ActivityType.Playing
-    }, {
-      name: "musics at OnBeat Radio",
-      type: ActivityType.Streaming,
-      url: "https://twitch.tv/iguhr"
-    },*/ {
+    const array = [{
       name: `${bot.guilds?.cache.size} servers!`,
       type: ActivityType.Listening
     }]
@@ -54,7 +44,6 @@ bot.on("ready", async () => {
   status()
   setInterval(status, 16000)
   await bot.initApplicationCommands();
-  // console.log(token)
 })
 
 post.on("posted", () => {
@@ -71,9 +60,6 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
        INSERT INTO users (id) VALUES (${interaction?.user.id})
       `
     }
-
-    // if(user[0].banned) return;
-// console.log(interaction)
     const logs = bot.channels.cache.get("1062366877541748826") as TextChannel;
       if(interaction.isCommand()) {
         logs?.send(`${interaction.user?.tag} used \`${interaction}\` at ${interaction.guild?.name}`)
@@ -99,7 +85,6 @@ bot.on("messageCreate", async (message: Message) => {
 async function run() {
   await importx(`${dirname(import.meta.url)}/{events,commands,api}/**/*.{ts,js}`);
 
-
   if (!process.env.BOT_TOKEN) {
     throw Error("Could not find BOT_TOKEN in your environment");
   }
@@ -107,14 +92,9 @@ async function run() {
   await bot.login(process.env.BOT_TOKEN);
   const app = new Koa();
 
-
-  // api: need to build the api server first
   await app.build();
-
-  // api: let's start the server now
   const port = process.env.PORT ?? 3000;
   app.listen(port, () => {
-    console.log(`discord api server started on ${port}`);
     console.log(`visit localhost:${port}/guilds`);
   });
 }
