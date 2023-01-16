@@ -104,7 +104,7 @@ export class MusicCommands {
     const radios = await sql`
       SELECT * FROM radios WHERE id = ${radio}
       `;
-    
+
     const _radio = radios[0];
     if (!radios) return i?.editReply({
       content: `[🔍] I couldn't find a radio with the name or id ${radio}`
@@ -184,7 +184,7 @@ export class MusicCommands {
       inline: true
     }, {
       name: "🎧 • Listened",
-      value: `${radio[0].listened??0} time${radio[0].listened>1?"s":""}`
+      value: `${radio[0].listened ?? 0} time${radio[0].listened > 1 ? "s" : ""}`
     }).setColor(0xe900FF)
     i.reply({
       embeds: [embed]

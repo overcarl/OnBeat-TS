@@ -10,7 +10,7 @@ import sql from './Database';
 
 
 export const bot = new Client({
-  partials: [Partials.Channel, Partials.Message, Partials.User, Partials.GuildMember],
+  partials: [Partials.Channel, Partials.Message],
   allowedMentions: {
     parse: [], repliedUser: true
   },
@@ -36,16 +36,17 @@ bot.on("ready", async () => {
   // await bot.clearApplicationCommands();
   // console.log(random)
   function status() {
-    const array = [{
+    const array = [
+      /*{
       name: "We apologize for any errors that occurred....",
       type: ActivityType.Playing
     }, {
       name: "musics at OnBeat Radio",
       type: ActivityType.Streaming,
       url: "https://twitch.tv/iguhr"
-    }, {
-      name: `with ${bot.guilds?.cache.size} guilds and ${bot.users?.cache.size} users!`,
-      type: ActivityType.Playing
+    },*/ {
+      name: `${bot.guilds?.cache.size} servers!`,
+      type: ActivityType.Listening
     }]
     const random = array[Math.floor(Math.random() * array.length)] as any;
     bot.user?.setActivity(random)
@@ -75,7 +76,7 @@ bot.on("interactionCreate", async (interaction: Interaction) => {
 // console.log(interaction)
     const logs = bot.channels.cache.get("1062366877541748826") as TextChannel;
       if(interaction.isCommand()) {
-        logs?.send(`${interaction.user?.tag} used ${interaction} at ${interaction.guild?.name}`)
+        logs?.send(`${interaction.user?.tag} used \`${interaction}\` at ${interaction.guild?.name}`)
       }
     await bot.executeInteraction(interaction);
   } catch (e) {
